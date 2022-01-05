@@ -6,7 +6,7 @@ public class Principal {
 
     @SerializedName("temp")
     private String temperature;
-    @SerializedName("hum")
+    @SerializedName("humidity")
     private String humidity;
 
     public String getTemperature() {
