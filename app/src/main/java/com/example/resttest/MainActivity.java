@@ -1,8 +1,10 @@
 package com.example.resttest;
 
 import android.Manifest;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.database.sqlite.SQLiteDatabase;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.LocationListener;
@@ -17,6 +19,7 @@ import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
+import com.example.resttest.DAO.ContractDAO;
 import com.example.resttest.Retrofit.ApiClient;
 import com.example.resttest.Retrofit.ApiInterface;
 import com.example.resttest.Retrofit.Exemplo;
@@ -105,7 +108,21 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         double longitude = location.getLongitude();
         setCityName(latitude, longitude);
     }
+    public void dataUpdate(String temperature, String humidity )
+    {
+        ContractDAO.FeedReaderDbHelper dbHelper = new ContractDAO.FeedReaderDbHelper(getApplicationContext());
+        // Gets the data repository in write mode
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
 
+        // Create a new map of values, where column names are the keys
+        ContentValues values = new ContentValues();
+        values.put(ContractDAO.ContractModel.COLUMN_NAME_TIMESTAMP, "");
+        values.put(ContractDAO.ContractModel.COLUMN_NAME_TEMPERATURE, temperature);
+        values.put(ContractDAO.ContractModel.COLUMN_NAME_HUMIDITY, humidity);
+
+        // Insert the new row, returning the primary key value of the new row
+        long newRowId = db.insert(ContractDAO.ContractModel.TABLE_NAME, null, values);
+    }
     @Override
     public void onLocationChanged(@NonNull List<android.location.Location> locations) {
 
