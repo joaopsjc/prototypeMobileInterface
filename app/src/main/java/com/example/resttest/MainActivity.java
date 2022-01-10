@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.location.Address;
 import android.location.Geocoder;
@@ -11,6 +12,7 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.BaseColumns;
 import android.util.Log;
 import android.widget.Button;
 
@@ -25,6 +27,8 @@ import com.example.resttest.Retrofit.ApiInterface;
 import com.example.resttest.Retrofit.Exemplo;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
 
@@ -38,9 +42,9 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
             Manifest.permission.INTERNET
     };
     private static final int INITIAL_REQUEST=1337;
-
+    private String lastTemperature=null,lastHumidity= null;
     protected LocationManager locationManager;
-    Button search_btn;
+    Button search_btn,dao_btn;
 
     String cityName = null;
 
@@ -50,6 +54,8 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         search_btn = findViewById(R.id.searchBtn);
+        dao_btn = findViewById(R.id.DAOButton);
+
 
 
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
@@ -62,12 +68,14 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         {
             locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
         }
-        search_btn.setOnClickListener(view -> getWeatherData());
+        search_btn.setOnClickListener(view -> extractWeatherData());
+        dao_btn.setOnClickListener(view -> getAllWeatherData());
     }
 
-    private void getWeatherData(){
+    private void extractWeatherData(){
         ApiInterface apiInterface =
                 ApiClient.getClient().create(ApiInterface.class);
+
         Log.d("DATA",cityName);
         Call<Exemplo> call = apiInterface.getWeatherData(cityName);
 
@@ -77,10 +85,17 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
                 try {
                     String temperature = response.body().getMain().getTemperature();
                     String humidity = response.body().getMain().getHumidity();
+
                     Log.d("DATA", temperature + "//"+humidity);
+                    if(hasWeatherChanged(temperature,humidity))
+                    {
+                        lastHumidity = humidity;
+                        lastTemperature = temperature;
+                        insertData(temperature,humidity);
+                    }
                 } catch (Exception e) {
                     e.printStackTrace();
-                    Log.d("DATA",response.errorBody().toString());
+                    //Log.d("DATA",response.errorBody().toString());
                 }
             }
 
@@ -108,20 +123,63 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         double longitude = location.getLongitude();
         setCityName(latitude, longitude);
     }
-    public void dataUpdate(String temperature, String humidity )
+    public Long insertData(String temperature, String humidity)
     {
-        ContractDAO.FeedReaderDbHelper dbHelper = new ContractDAO.FeedReaderDbHelper(getApplicationContext());
+        ContractDAO.FeedReaderDbHelper dbHelper =
+                new ContractDAO.FeedReaderDbHelper(getApplicationContext());
         // Gets the data repository in write mode
         SQLiteDatabase db = dbHelper.getWritableDatabase();
-
         // Create a new map of values, where column names are the keys
         ContentValues values = new ContentValues();
-        values.put(ContractDAO.ContractModel.COLUMN_NAME_TIMESTAMP, "");
+        int year = Calendar.getInstance().get(Calendar.YEAR);
+        int month = Calendar.getInstance().get(Calendar.MONTH);
+        int day = Calendar.getInstance().get(Calendar.DAY_OF_MONTH);
+        int hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
+        String timestamp = day + "/" + month + "/" + year + " " +
+                hour + ":00";
+        values.put(ContractDAO.ContractModel.COLUMN_NAME_TIMESTAMP,timestamp);
         values.put(ContractDAO.ContractModel.COLUMN_NAME_TEMPERATURE, temperature);
         values.put(ContractDAO.ContractModel.COLUMN_NAME_HUMIDITY, humidity);
 
         // Insert the new row, returning the primary key value of the new row
-        long newRowId = db.insert(ContractDAO.ContractModel.TABLE_NAME, null, values);
+        return db.insert(ContractDAO.ContractModel.TABLE_NAME, null, values);
+    }
+    public boolean hasWeatherChanged(String temperature, String humidity) {
+        return !temperature.equals(lastTemperature) || !humidity.equals(lastHumidity);
+    }
+    public void getAllWeatherData()
+    {
+        ContractDAO.FeedReaderDbHelper dbHelper =
+                new ContractDAO.FeedReaderDbHelper(getApplicationContext());
+        // Gets the data repository in write mode
+        SQLiteDatabase db = dbHelper.getWritableDatabase();
+
+
+        Cursor cursor = db.query(
+                ContractDAO.ContractModel.TABLE_NAME,   // The table to query
+                null,             // The array of columns to return (pass null to get all)
+                null,              // The columns for the WHERE clause
+                null,          // The values for the WHERE clause
+                null,                   // don't group the rows
+                null,                   // don't filter by row groups
+                null               // The sort order
+        );
+        List<WeatherData> weatherData = new ArrayList();
+        while(cursor.moveToNext()) {
+            String newTemperature = cursor.getString(
+                    cursor.getColumnIndexOrThrow(ContractDAO.
+                            ContractModel.COLUMN_NAME_TEMPERATURE));
+            String newHumidity = cursor.getString(
+                    cursor.getColumnIndexOrThrow(ContractDAO.
+                            ContractModel.COLUMN_NAME_HUMIDITY));
+            String newTimestamp = cursor.getString(
+                    cursor.getColumnIndexOrThrow(ContractDAO.
+                            ContractModel.COLUMN_NAME_TIMESTAMP));
+            weatherData.add(new WeatherData(newTemperature, newHumidity,newTimestamp));
+            Log.d("DATA",newTemperature+"//"+newHumidity);
+        }
+        cursor.close();
+
     }
     @Override
     public void onLocationChanged(@NonNull List<android.location.Location> locations) {
