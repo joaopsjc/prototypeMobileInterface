@@ -5,7 +5,9 @@
       <map>
         <entry key="..\:/Users/Dev/StudioProjects/prototypeMobileInterface/app/src/main/res/drawable-v24/ic_launcher_foreground.xml" value="0.12777777777777777" />
         <entry key="..\:/Users/Dev/StudioProjects/prototypeMobileInterface/app/src/main/res/drawable/ic_launcher_background.xml" value="0.14635416666666667" />
+        <entry key="..\:/Users/Dev/StudioProjects/prototypeMobileInterface/app/src/main/res/layout/activity_appointment.xml" value="0.22916666666666666" />
         <entry key="..\:/Users/Dev/StudioProjects/prototypeMobileInterface/app/src/main/res/layout/activity_main.xml" value="0.25" />
+        <entry key="..\:/Users/Dev/StudioProjects/prototypeMobileInterface/app/src/main/res/layout/activity_results.xml" value="0.11956521739130435" />
         <entry key="app/src/main/res/layout/activity_main.xml" value="0.1" />
         <entry key="app/src/main/res/xml/security.xml" value="0.1" />
       </map>
