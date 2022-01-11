@@ -20,17 +20,21 @@ import androidx.annotation.NonNull;
 import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.work.PeriodicWorkRequest;
+import androidx.work.WorkManager;
 
 import com.example.resttest.DAO.ContractDAO;
 import com.example.resttest.Retrofit.ApiClient;
 import com.example.resttest.Retrofit.ApiInterface;
 import com.example.resttest.Retrofit.Exemplo;
+import com.example.resttest.workload.ExtractWeatherWork;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -45,7 +49,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
     private String lastTemperature=null,lastHumidity= null;
     private LocationManager locationManager;
     private Button search_btn,dao_btn,appointmentActivity_btn;
-
+    private PeriodicWorkRequest extractWeatherRequest;
     String cityName = null;
 
     @RequiresApi(api = Build.VERSION_CODES.M)
@@ -70,6 +74,11 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         {
             locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0,
                     0, this);
+
+            extractWeatherRequest = new PeriodicWorkRequest.Builder(ExtractWeatherWork.class, 1,
+                    TimeUnit.HOURS).build();
+            WorkManager.getInstance(this).enqueue(extractWeatherRequest);
+
         }
 
         setLastWeatherData();
@@ -229,28 +238,4 @@ public class MainActivity extends AppCompatActivity implements LocationListener 
         cursor.close();
     }
 
-    @Override
-    public void onLocationChanged(@NonNull List<android.location.Location> locations) {
-
-    }
-
-    @Override
-    public void onFlushComplete(int requestCode) {
-
-    }
-
-    @Override
-    public void onStatusChanged(String provider, int status, Bundle extras) {
-
-    }
-
-    @Override
-    public void onProviderEnabled(@NonNull String provider) {
-
-    }
-
-    @Override
-    public void onProviderDisabled(@NonNull String provider) {
-
-    }
 }
